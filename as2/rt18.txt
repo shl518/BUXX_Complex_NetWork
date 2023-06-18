@@ -1,0 +1,101 @@
+[V200R003C00]
+#
+ sysname rt18
+#
+ snmp-agent local-engineid 800007DB03000000000000
+ snmp-agent 
+#
+ clock timezone China-Standard-Time minus 08:00:00
+#
+portal local-server load flash:/portalpage.zip
+#
+ drop illegal-mac alarm
+#
+router id 2.1.1.18 
+#
+ wlan ac-global carrier id other ac id 0
+#
+ set cpu-usage threshold 80 restore 75
+#
+aaa 
+ authentication-scheme default
+ authorization-scheme default
+ accounting-scheme default
+ domain default 
+ domain default_admin 
+ local-user admin password cipher %$%$K8m.Nt84DZ}e#<0`8bmE3Uw}%$%$
+ local-user admin service-type http
+#
+firewall zone Local
+ priority 15
+#
+interface GigabitEthernet0/0/0
+ ip address 200.0.0.229 255.255.255.252 
+#
+interface GigabitEthernet0/0/1
+ ip address 200.2.2.18 255.255.255.0 
+#
+interface GigabitEthernet0/0/2
+ ip address 200.2.3.18 255.255.255.0 
+#
+interface NULL0
+#
+interface LoopBack0
+ ip address 2.1.1.18 255.255.255.255 
+#
+interface LoopBack1
+ ip address 192.168.2.18 255.255.255.255 
+#
+bgp 2
+ peer 200.0.0.230 as-number 4 
+ group as2 internal
+ peer as2 connect-interface LoopBack0
+ peer 2.1.1.15 as-number 2 
+ peer 2.1.1.15 group as2 
+ peer 2.1.1.16 as-number 2 
+ peer 2.1.1.16 group as2 
+ peer 2.1.1.17 as-number 2 
+ peer 2.1.1.17 group as2 
+ #
+ ipv4-family unicast
+  undo synchronization
+  default local-preference 200
+  import-route ospf 1 route-policy import_ospf
+  peer 200.0.0.230 enable
+  peer 200.0.0.230 ip-prefix permit_export export
+  peer as2 enable
+  peer as2 next-hop-local 
+  peer 2.1.1.15 enable
+  peer 2.1.1.15 group as2 
+  peer 2.1.1.16 enable
+  peer 2.1.1.16 group as2 
+  peer 2.1.1.17 enable
+  peer 2.1.1.17 group as2 
+#
+ospf 1 
+ import-route bgp route-policy import_bgp
+ area 0.0.0.0 
+  network 2.1.1.18 0.0.0.0 
+  network 200.2.0.0 0.0.255.255 
+  network 192.168.2.18 0.0.0.0 
+#
+route-policy import_ospf permit node 10 
+ if-match ip-prefix permit_snmp_in 
+#
+route-policy import_bgp permit node 10 
+ if-match ip-prefix permit_snmp_out 
+#
+ip ip-prefix permit_snmp_in index 10 permit 192.168.0.0 24
+ip ip-prefix permit_snmp_out index 10 permit 192.168.4.0 24
+ip ip-prefix permit_export index 10 permit 172.16.1.0 24
+ip ip-prefix permit_export index 20 permit 200.3.111.1 32
+ip ip-prefix permit_export index 30 permit 192.168.0.0 24
+#
+user-interface con 0
+ authentication-mode password
+user-interface vty 0 4
+user-interface vty 16 20
+#
+wlan ac
+#
+return

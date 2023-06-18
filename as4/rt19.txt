@@ -1,0 +1,108 @@
+#
+ sysname rt19
+#
+ snmp-agent local-engineid 800007DB03000000000000
+ snmp-agent 
+#
+ clock timezone China-Standard-Time minus 08:00:00
+#
+portal local-server load flash:/portalpage.zip
+#
+ drop illegal-mac alarm
+#
+router id 4.1.1.19 
+#
+ wlan ac-global carrier id other ac id 0
+#
+ set cpu-usage threshold 80 restore 75
+#
+aaa 
+ authentication-scheme default
+ authorization-scheme default
+ accounting-scheme default
+ domain default 
+ domain default_admin 
+ local-user admin password cipher %$%$K8m.Nt84DZ}e#<0`8bmE3Uw}%$%$
+ local-user admin service-type http
+#
+firewall zone Local
+ priority 15
+#
+interface GigabitEthernet0/0/0
+ ip address 200.0.0.234 255.255.255.252 
+#
+interface GigabitEthernet0/0/1
+ ip address 200.4.2.19 255.255.255.0 
+#
+interface GigabitEthernet0/0/2
+ ip address 200.4.3.19 255.255.255.0 
+#
+interface NULL0
+#
+interface LoopBack0
+ ip address 4.1.1.19 255.255.255.255 
+#
+interface LoopBack1
+ ip address 192.168.4.19 255.255.255.255 
+#
+bgp 4
+ peer 200.0.0.233 as-number 2 
+ group as4 internal
+ peer as4 connect-interface LoopBack0
+ peer 4.1.1.20 as-number 4 
+ peer 4.1.1.20 group as4 
+ #
+ ipv4-family unicast
+  undo synchronization
+  aggregate 192.168.4.0 255.255.255.0 detail-suppressed 
+  import-route ospf 1 route-policy import_ospf
+  peer 200.0.0.233 enable
+  peer as4 enable
+  peer 4.1.1.20 enable
+  peer 4.1.1.20 group as4 
+#
+ospf 1 
+ import-route bgp cost 2 route-policy import_bgp
+ preference ase 255 
+ area 0.0.0.0 
+  network 4.1.1.19 0.0.0.0 
+  network 200.4.0.0 0.0.255.255 
+  network 192.168.4.19 0.0.0.0 
+#
+route-policy import_bgp permit node 10 
+ if-match ip-prefix permit_inet 
+#
+route-policy import_bgp permit node 20 
+ if-match ip-prefix permit_voip_out 
+#
+route-policy import_bgp permit node 30 
+ if-match ip-prefix permit_snmp_out 
+#
+route-policy import_ospf permit node 10 
+ if-match ip-prefix permit_users 
+#
+route-policy import_ospf permit node 20 
+ if-match ip-prefix permit_voip_in 
+#
+route-policy import_ospf permit node 30 
+ if-match ip-prefix permit_snmp_in 
+#
+ip ip-prefix permit_users index 10 permit 200.4.10.0 24
+ip ip-prefix permit_users index 20 permit 200.4.11.0 24
+ip ip-prefix permit_users index 30 permit 200.4.12.0 24
+ip ip-prefix permit_users index 40 permit 200.4.13.0 24
+ip ip-prefix permit_inet index 10 permit 172.16.1.0 24
+ip ip-prefix permit_voip_in index 10 permit 200.4.123.1 32
+ip ip-prefix permit_voip_out index 10 permit 200.3.111.1 32
+ip ip-prefix permit_snmp_in index 10 permit 192.168.4.0 24 greater-equal 24 less
+-equal 32
+ip ip-prefix permit_snmp_out index 10 permit 192.168.0.0 24
+#
+user-interface con 0
+ authentication-mode password
+user-interface vty 0 4
+user-interface vty 16 20
+#
+wlan ac
+#
+return
